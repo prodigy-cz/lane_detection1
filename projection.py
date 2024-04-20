@@ -9,7 +9,7 @@ prev_fitted_curves = [[], [], []]
 prev_fitted_curves1 = []
 prev_fitted_curves2 = []
 prev_fitted_curves3 = []
-avg_coefficients = [[] for _ in range(3)]
+avg_coefficients = [[], [], []]
 
 
 class LaneMarking:
@@ -51,7 +51,7 @@ class LaneMarking:
             percent_b = abs(current_b - previous_b) / abs(previous_b) * 100
             print('percent diff: ', percent_a, percent_b)
             # Check percentage criteria
-            if percent_a <= 10 and percent_b <= 10:
+            if percent_a <= 50 and percent_b <= 50:
                 return True
         return False
 
@@ -68,17 +68,17 @@ class LaneMarking:
             self.fitted_curves.append(coefficients)
 
             # If the current frame coeffs are similar to previous, add it to the list for averaging
-            if self.compare_frame(lane_num=i):
+            if self.compare_frame(lane_num=i) == True or self.compare_frame(lane_num=i) == False:
                 # Store fitted curves coefficients into prev_fitted_curves list to use it for averaging and decision-making
-                if i == 1:
+                if i == 0:
                     prev_fitted_curves[0].append(coefficients)
-                elif i == 2:
+                elif i == 1:
                     prev_fitted_curves[1].append(coefficients)
-                elif i == 3:
+                elif i == 2:
                     prev_fitted_curves[2].append(coefficients)
                 else:
-                    print('More than 3 lanes detected')
-            print(prev_fitted_curves[1])
+                    print('More than 3 lanes detected, i =', i)
+        print('prev_fitted_curves: ', prev_fitted_curves)
 
     def avg_polynomials(self):
         global avg_coefficients
@@ -91,6 +91,7 @@ class LaneMarking:
 
             avg_coeffs = np.mean(prev, axis=0)
             avg_coefficients[j] = avg_coeffs
+        print('avg_coefficients:', avg_coefficients)
 
     def project_lane_marking(self):
         # Project the lane marking into the frame
@@ -98,7 +99,7 @@ class LaneMarking:
         # for curve_coefficients in self.fitted_curves:
         for curve_coefficients in avg_coefficients:
             # Generate y values
-            y_values = np.linspace(self.correction_shift, self.frame.shape[0], num=100)
+            y_values = np.linspace(start=self.correction_shift, stop=self.frame.shape[0], num=100) # Correction shift -> start projection from this part of image
 
             # Calculate x values with polynomial coefficients
             x_values = np.polyval(curve_coefficients, y_values)
