@@ -27,7 +27,10 @@ class LaneMarking:
         contours = sorted(contours, key=cv2.contourArea, reverse=True)
 
         # Pick the largest contours from the sorted list
-        self.largest_contours = contours[:3]
+        self.largest_contours = contours[:4]
+
+    def filter_contours(self):
+        filtered_contours = self.largest_contours.copy()
 
     def compare_frame(self, lane_num):
         # Compare current frame detection with previous number of predictions
@@ -62,7 +65,7 @@ class LaneMarking:
                 return True
         return False
 
-    def fit_polynomial_curve(self, degree=3):
+    def fit_polynomial_curve(self, degree=2):
         # Fit polynomial curve to each lane marking
         for i, marking in enumerate(self.largest_contours):
             # Extract marking coordinates
@@ -77,7 +80,7 @@ class LaneMarking:
             coefficients = np.polyfit(y_coordinates_shifted, x_coordinates, degree)
 
             self.fitted_curves.append(coefficients)
-
+        """
             # If the current frame coeffs are similar to previous, add it to the list for averaging
             if self.compare_frame(lane_num=i): # == True or self.compare_frame(lane_num=i) == False:
                 # Store fitted curves coefficients into prev_fitted_curves list to use it for averaging and decision-making
@@ -92,7 +95,9 @@ class LaneMarking:
         #print('prev_fitted_curves-1: ', prev_fitted_curves[0][-1])
         #print('prev_fitted_curves-2: ', prev_fitted_curves[0][-2])
         print('prev_fitted_curves: ', prev_fitted_curves[0])
+        """
 
+    """        
     def avg_polynomials(self):
         global avg_coefficients
         # Interpolate previous polynomials to smooth detection
@@ -105,11 +110,12 @@ class LaneMarking:
             avg_coeffs = np.mean(prev, axis=0)
             avg_coefficients[j] = avg_coeffs
         print('avg_coefficients:', avg_coefficients[1])
+    """
 
     def project_lane_marking(self):
         # Project the lane marking into the frame
         # Iterate over the list with curves coefficients
-        # for curve_coefficients in self.fitted_curves:
+        # for curve_coefficients in avg_coefficients:
         for curve_coefficients in self.fitted_curves:
             # Generate y values
             y_values = np.linspace(start=self.correction_shift, stop=self.frame.shape[0], num=100) # Correction shift -> start projection from this part of image
@@ -121,6 +127,73 @@ class LaneMarking:
 
             # Draw the curve on the frame
             cv2.polylines(self.frame, [curve_points], isClosed=False, color=(0, 255, 0), thickness=5)
+            # Project the contours onto the frame
+
+        for contour in self.largest_contours:
+            # Create a copy of the contour
+            shifted_contour = contour.copy()
+
+            # Shift the y-coordinates of the contour points
+            for point in shifted_contour:
+                point[0][1] += self.correction_shift
+
+            # Draw the shifted contour on the frame
+            cv2.drawContours(self.frame, [shifted_contour], contourIdx=-1, color=(0, 0, 255), thickness=2)
+
+            # Find leftmost, rightmost, topmost, and bottommost points of the contour
+            leftmost = tuple(shifted_contour[shifted_contour[:, :, 0].argmin()][0])
+            rightmost = tuple(shifted_contour[shifted_contour[:, :, 0].argmax()][0])
+            topmost = tuple(shifted_contour[shifted_contour[:, :, 1].argmin()][0])
+            bottommost = tuple(shifted_contour[shifted_contour[:, :, 1].argmax()][0])
+
+            # Draw points on the frame to visualize them
+            cv2.circle(self.frame, leftmost, 5, (255, 0, 0), -1)
+            cv2.circle(self.frame, rightmost, 5, (255, 0, 0), -1)
+            cv2.circle(self.frame, topmost, 5, (255, 0, 0), -1)
+            cv2.circle(self.frame, bottommost, 5, (255, 0, 0), -1)
+
+        #for contour in self.largest_contours:
+            #print("Number of points in contour:", len(contour))
+
+            if len(contour) >= 5:
+
+                # Fit an ellipse to the contour
+                ellipse = cv2.fitEllipse(shifted_contour)
+
+                # Draw the ellipse on the frame
+                #cv2.ellipse(self.frame, ellipse, (0, 0, 255), 2)
+
+                # Get the angle of the major axis relative to the horizontal axis
+                angle = ellipse[2]
+
+                # Print the angle
+                print("Angle of major axis with horizontal axis:", angle)
+
+        #for contour in self.largest_contours:
+            # Check if the contour has at least 5 points
+            if len(contour) >= 5:
+                # Calculate moments of the contour
+                M = cv2.moments(shifted_contour)
+
+                # Calculate the center of mass
+                if M["m00"] != 0:
+                    cx = int(M["m10"] / M["m00"])
+                    cy = int(M["m01"] / M["m00"])
+
+                    # Print the center of mass
+                    print("Center of mass (cx, cy):", (cx, cy))
+
+                    # Draw a circle at the center of mass
+                    cv2.circle(self.frame, (cx, cy), 5, (0, 255, 0), -1)
+
+        # Calculate the x-coordinate for the vertical line (middle of the image)
+        middle_x = self.frame.shape[1] // 2
+
+        # Draw the vertical middle line on the frame
+        cv2.line(self.frame, (middle_x, 0), (middle_x, self.frame.shape[0]), [0, 255, 255], thickness=2)
+
+        # first deviding line
+        cv2.line(self.frame, ((self.frame.shape[1] // 4), 0), ((self.frame.shape[1] // 4), self.frame.shape[0]), [0, 255, 255], thickness=2)
 
     """
     def draw_lane_center(self):

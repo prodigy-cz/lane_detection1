@@ -15,7 +15,7 @@ model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
 unet = LaneDetector(model_path=model_path, temporal_window=15)
 
 # Initialize video capture
-video_capture = VideoCapture(video_path='video_capture/test_curved2.mp4')
+video_capture = VideoCapture(video_path='video_capture/test_straight1.mp4')
 
 
 while True:
@@ -41,10 +41,10 @@ while True:
     # Calculate lane centers
 
     # Extract lane marking and fit curves
-    lane_marking = projection.LaneMarking(binary_mask, binary_mask)
-    lane_marking.extract_lane_markings(num_contours=3) # Set a number of contours (default=3)
+    lane_marking = projection.LaneMarking(binary_mask, frame)
+    lane_marking.extract_lane_markings(num_contours=5) # Set a number of contours (default=3)
     lane_marking.fit_polynomial_curve()
-    lane_marking.avg_polynomials()
+    #lane_marking.avg_polynomials()
     # Project lane markings into the frame
     lane_marking.project_lane_marking()
 
@@ -54,7 +54,7 @@ while True:
     #lane_marking.draw_lane_center()
 
     # Display the frame
-    cv2.imshow('Lane Detection: U-Net', binary_mask)
+    cv2.imshow('Lane Detection: U-Net', frame)
     #cv2.imshow('Lane Detection', projected_frame)
 
     # Break the loop if the 'q' key is pressed
