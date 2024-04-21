@@ -4,6 +4,7 @@ import numpy as np
 # imports
 import torch
 import config
+import math
 
 class LaneDetector:
     def __init__(self, model_path, temporal_window=20):
@@ -61,7 +62,28 @@ class LaneDetector:
         num_predictions = len(self.previous_predictions)
         if num_predictions <= 1:
             return None
-        avg_prediction = sum(self.previous_predictions) / num_predictions
+
+        # exponential decay
+        decay_rate = 0.6
+        #weights = [math.exp(-decay_rate * i) for i in range(num_predictions)]
+
+        # linear decay
+        # weights = [1 - i / num_predictions for i in range(num_predictions)]
+
+        # decay = series of products
+        weights = [1.0]
+        for i in range(1, num_predictions):
+            weights.append(weights[-1] * decay_rate)
+
+        # both decays
+        total_weight = sum(weights)
+        normalized_weights = [j / total_weight for j in weights]
+        weighted_predictions = [p * j for p, j in zip(self.previous_predictions, normalized_weights)]
+        avg_prediction = sum(weighted_predictions)
+        print('prediction: ', avg_prediction)
+
+        # standard
+        #avg_prediction = sum(self.previous_predictions) / num_predictions
         return avg_prediction
 
     def post_process_prediction(self, prediction, avg_prediction, threshold=config.THRESHOLD):
@@ -76,8 +98,17 @@ class LaneDetector:
         binary_mask = binary_mask_cropped[250:, :]
 
         # Apply gaussian and median blur
-        binary_mask = cv2.GaussianBlur(binary_mask, (5, 5), 0)
+        #binary_mask = cv2.GaussianBlur(binary_mask, (5, 5), 0)
+
+        kernel_ero = np.ones((8, 8), np.uint8) # Define a kernel for erosion
+        kernel_dil = np.ones((8, 8), np.uint8)  # Define a kernel for dilation
+        kernel = np.ones((4, 4), np.uint8)  # Define a kernel for dilation
+
+        binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=1) # Apply Erosion
         binary_mask = cv2.medianBlur(binary_mask, 5)
+        binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=1) # Apply Dilation operation
+        binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_OPEN, kernel)
+        binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
 
         #binary_mask = cv2.resize(binary_mask, (config.INPUT_IMAGE_WIDTH, config.roi_height))
         return binary_mask
