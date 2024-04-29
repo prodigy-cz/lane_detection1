@@ -80,7 +80,7 @@ class LaneDetector:
         normalized_weights = [j / total_weight for j in weights]
         weighted_predictions = [p * j for p, j in zip(self.previous_predictions, normalized_weights)]
         avg_prediction = sum(weighted_predictions)
-        print('prediction: ', avg_prediction)
+        #print('prediction: ', avg_prediction)
 
         # standard
         #avg_prediction = sum(self.previous_predictions) / num_predictions
@@ -100,13 +100,13 @@ class LaneDetector:
         # Apply gaussian and median blur
         #binary_mask = cv2.GaussianBlur(binary_mask, (5, 5), 0)
 
-        kernel_ero = np.ones((2, 2), np.uint8) # Define a kernel for erosion
+        kernel_ero = np.ones((5, 5), np.uint8) # Define a kernel for erosion
         kernel_dil = np.ones((4, 4), np.uint8)  # Define a kernel for dilation
         kernel = np.ones((4, 4), np.uint8)  # Define a kernel for dilation
 
-        binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=2) # Apply Erosion
+        binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=1) # Apply Erosion
         binary_mask = cv2.medianBlur(binary_mask, 5)
-        binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=2) # Apply Dilation operation
+        binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=1) # Apply Dilation operation
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_OPEN, kernel)
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
 

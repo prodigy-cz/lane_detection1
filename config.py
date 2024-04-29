@@ -37,10 +37,10 @@ roi_start_y = INPUT_IMAGE_HEIGHT - roi_height
 roi_coordinates = (0, roi_start_y, roi_width, roi_height)
 
 # Class weight to eliminate class imbalances
-class_weight = [50]
+class_weight = [30]
 
 # define threshold to filter weak predictions
-THRESHOLD = 0.6
+THRESHOLD = 0.7
 
 # base paths of the datasets
 TRAIN_PATH = "/content/train_image_truth_pairs.txt" #"/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_train_list-images.txt"
