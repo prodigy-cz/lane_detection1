@@ -64,7 +64,7 @@ class LaneDetector:
             return None
 
         # exponential decay
-        decay_rate = 0.6
+        decay_rate = 0.7
         #weights = [math.exp(-decay_rate * i) for i in range(num_predictions)]
 
         # linear decay
@@ -95,7 +95,7 @@ class LaneDetector:
 
         binary_mask = binary_mask.astype(np.uint8)
         binary_mask_cropped = binary_mask.copy()
-        binary_mask = binary_mask_cropped[250:, :]
+        binary_mask = binary_mask_cropped[280:, :]
 
         # Apply gaussian and median blur
         #binary_mask = cv2.GaussianBlur(binary_mask, (5, 5), 0)

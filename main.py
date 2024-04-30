@@ -15,7 +15,7 @@ model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
 unet = LaneDetector(model_path=model_path, temporal_window=15)
 
 # Initialize video capture
-video_capture = VideoCapture(video_path='video_capture/test_curved2.mp4')
+video_capture = VideoCapture(video_path='video_capture/test_straight1.mp4')
 
 
 while True:
@@ -38,25 +38,31 @@ while True:
     # Predictions postprocessing
     binary_mask = unet.post_process_prediction(prediction, avg_prediction)
 
-    # Calculate lane centers
 
-    # Extract lane marking and fit curves
+    # Initialize the lane_marking object
     lane_marking = projection.LaneMarking(binary_mask, frame)
-    lane_marking.extract_lane_markings(num_contours=5) # Set a number of contours (default=3)
+    # Extract lane marking
+    lane_marking.extract_lane_markings(num_contours=5) # Set a number of the biggest contours to be detected
+    # Segment detected contours for smoother polyfit and lane center calculation
     contours_segments = lane_marking.split_contours()
+    # Filtering contours based on contours segments center of mass average position
+    # Only current lane's boundaries are left after filtering
     left_centers, right_centers = lane_marking.filter_contours(contours_segments=contours_segments)
+    # Fit detected contours with polynomials and add their coefficients in marking history (prev_fitted_contours)
     lane_marking.fit_polynomial_curve(left_centers, right_centers)
-    #lane_marking.avg_polynomials()
+    # Interpolate the correct detections with appropriate weights
+    lane_marking.avg_polynomials()
     # Project lane markings into the frame
     lane_marking.project_lane_marking()
 
+    # Calculate lane centers
 
 
     # Project centers into the frame
     #lane_marking.draw_lane_center()
 
     # Display the frame
-    cv2.imshow('Lane Detection: U-Net', frame)
+    cv2.imshow('Lane Detection: U-Net', binary_mask)
     #cv2.imshow('Lane Detection', projected_frame)
 
     # Break the loop if the 'q' key is pressed
