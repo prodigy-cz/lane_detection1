@@ -3,6 +3,7 @@
 # Imports
 import cv2
 
+
 class VideoCapture:
     def __init__(self, video_path):
         # Initialize video capture (video file)
@@ -13,7 +14,7 @@ class VideoCapture:
             raise ValueError(f"Error: Couldn't open the file {video_path}")
 
     def capture_frame(self):
-        # captures and returns a video frame
+        # Captures and returns a video frame
         ret, frame = self.cap.read()
 
         if ret is not True:

@@ -3,7 +3,7 @@
 # Imports
 import cv2
 import numpy as np
-import config
+
 
 def get_center_of_mass(frame, contour):
     # for contour in self.largest_contours:
@@ -22,9 +22,12 @@ def get_center_of_mass(frame, contour):
             cv2.circle(frame, (cx, cy), 5, (5, 94, 255), -1)
             return cen_of_mass
 
+
+# Define blank lists to store curves coefficients
 prev_fitted_curves = [[], []]
 curves_for_avg = [[], []]
 avg_coefficients = [[], []]
+
 
 class LaneMarking:
     def __init__(self, binary_mask, frame):
@@ -56,15 +59,15 @@ class LaneMarking:
         #for contour in self.largest_contours:
         #    cv2.drawContours(self.frame, self.largest_contours, -1, (0, 0, 255), 2)
     def split_contours(self):
-        # Split contours row wise into smaller segments
+        # Split contours row-wise into smaller segments
         num_segments = 100
         segment_height = self.frame.shape[0] // num_segments # height of the segments after split
         contours = self.largest_contours.copy()
-        print('\n New Frame:')
+        #print('\n New Frame:')
 
         contours_segments = [] # List of segments of all contours
         for contour in contours:
-            print('\n New Contour:')
+            #print('\n New Contour:')
             contour_segments = [] # list of segments of one contour
             for i in range(num_segments):
                 # Define segments boundaries for current segment
@@ -83,6 +86,7 @@ class LaneMarking:
                 if np.any(contour_segment):
                     # If the segment consists of some points append the segment to the list of segment of the current contour
                     contour_segments.append(contour_segment)
+
             # Append segments of current contour to the list of segments of all contours
             contours_segments.append(contour_segments)
 
@@ -104,7 +108,7 @@ class LaneMarking:
                 if center_of_mass is not None:
                     centers_of_mass.append(center_of_mass)
 
-            # Convert centers_of_mass to a NumPy array
+            # Convert centers_of_mass to a np array
             centers_array = np.array(centers_of_mass)
 
             # Check if there are any centers of mass
@@ -113,7 +117,7 @@ class LaneMarking:
                 average_x = np.mean(centers_array[:, 0])
                 print('average_x:', average_x)
 
-                # Check if the average center is close to the center of the image
+                # Check if the average center is close to the center of the image (center of the vehicle)
                 if (self.frame.shape[1] // 4) <= average_x < (self.frame.shape[1] // 2):
                     left_centers.extend(centers_array)
 
@@ -156,6 +160,7 @@ class LaneMarking:
             #print('current c:', current_c, 'prev c', previous_c)
             print('percent diff: ', percent_a, percent_b, percent_c)
             # Check percentage criteria
+            #if percent_a <= 30 and percent_b <= 30: # Not used for unstable behavior
             if percent_a:
                 return True
         return False
@@ -168,7 +173,7 @@ class LaneMarking:
             x_left_values = left_centers[:, 0]  # Extracting x values
             y_left_values = left_centers[:, 1]  # Extracting y values
         else:
-            print("Warning: left_centers is empty.")
+            print("Left_centers list is empty.")
             return
 
         if right_centers:
@@ -176,7 +181,7 @@ class LaneMarking:
             x_right_values = right_centers[:, 0]  # Extracting x values
             y_right_values = right_centers[:, 1]  # Extracting y values
         else:
-            print("Warning: right_centers is empty.")
+            print("Right_centers list is empty.")
             return
 
         left_coefficients = np.polyfit(y_left_values, x_left_values, degree)
@@ -192,7 +197,7 @@ class LaneMarking:
                 prev_fitted_curves[1].append(coefficients)
 
             # If the current frame coeffs are similar to previous, add it to the list for averaging
-            if self.compare_frame(lane_num=i): # == True or self.compare_frame(lane_num=i) == False:
+            if self.compare_frame(lane_num=i):
                 # Store fitted curves coefficients into curves_for_avg list to use it for averaging and decision-making
                 if i == 0:
                     curves_for_avg[0].append(coefficients)
@@ -200,28 +205,24 @@ class LaneMarking:
                     curves_for_avg[1].append(coefficients)
                 else:
                     print('More than 2 lanes detected, i =', i)
-            #print('curves_for_avg-1: ', curves_for_avg[0][-1])
-            #print('curves_for_avg-2: ', curves_for_avg[0][-2])
-            #print('curves_for_avg: ', curves_for_avg[0])
 
-    def avg_polynomials(self, interp_window=5):
+    def avg_polynomials(self, window=5): # window = num of predictions in count
         global avg_coefficients
-        # Interpolate previous polynomials to smooth detection
+        # Smooth detection with temporal averaging
         for j, prev in enumerate(curves_for_avg):
             if len(prev) <= 1:
                 return None
-            if len(prev) > interp_window:
+            if len(prev) > window:
                 prev.pop(0)
 
             avg_coeffs = np.mean(prev, axis=0)
             avg_coefficients[j] = avg_coeffs
         return avg_coefficients
 
-
     def project_lane_marking(self):
         # Project the lane marking into the frame
         # Iterate over the list with curves coefficients
-        # for curve_coefficients in self.fitted_curves:
+        # for curve_coefficients in self.fitted_curves: # Without averaging
         for curve_coefficients in avg_coefficients:
             # Generate y values
             y_values = np.linspace(start=self.correction_shift, stop=self.frame.shape[0]) # Correction shift -> start projection from this part of image
@@ -252,5 +253,18 @@ class LaneMarking:
             if len(contour) >= 5:
                 # Calculate moments of the contour
                 get_center_of_mass(self.frame, contour)
+
+        # Draw the center of the vehicle into the final frame
+        bottom_center_x = self.frame.shape[1] // 2
+        bottom_center_y = self.frame.shape[0] - 1
+        rectangle_width = 20
+        rectangle_height = 20
+
+        # Calculate the coordinates of the rectangle
+        top_left = (bottom_center_x - rectangle_width // 2, bottom_center_y - rectangle_height)
+        bottom_right = (bottom_center_x + rectangle_width // 2, bottom_center_y + rectangle_height)
+
+        # Draw the rectangle
+        cv2.rectangle(self.frame, top_left, bottom_right, (0, 0, 255), thickness=-1)
 
         return

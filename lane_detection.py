@@ -13,7 +13,7 @@ class LaneDetector:
         self.previous_predictions = []
 
     def load_lane_detection_model(self, model_path):
-        # Loads the model
+        # Load the model
         print("[INFO: ] loading up model...")
         if torch.cuda.is_available():
             model = torch.load(model_path).to(config.DEVICE)
@@ -30,7 +30,7 @@ class LaneDetector:
             # Inference logic
             image = pre_processed_image  # Inference on ROI
             image = np.transpose(image, (2, 0, 1))  # Transpose to Channel first format (C, H, W)
-            image = np.expand_dims(image, 0)  # Extra dim to represent batch size (1, C, H, W), Torch requirement
+            image = np.expand_dims(image, 0)  # Extra dimension to represent batch size (1, C, H, W), Torch requirement
             image = torch.from_numpy(image).to(config.DEVICE)  # NumPy array to a PyTorch tensor and GPU
 
             prediction = self.model(image).squeeze()  # Removes singleton dim -> (C, H, W)
@@ -114,7 +114,3 @@ class LaneDetector:
         #binary_mask = cv2.resize(binary_mask, (config.INPUT_IMAGE_WIDTH, config.roi_height))
         return binary_mask
 
-
-#def calculate_lane_centers(binary_mask):
-#    # Find contours and calculate lane centers
-#    return lane_centers

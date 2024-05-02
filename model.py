@@ -100,10 +100,9 @@ class Decoder(Module):
         return encoder_features
 
 class UNet(Module):
-
     # encoder_channels - increase of channel dimension as the input passes through the encoder
     # decoder_channels - decrease of channel dimension as the input passes through decoder
-    # channel_classes_number - number of segmentat. class. - clasifying each pixel - corresponds to the number of chann.
+    # channel_classes_number - number of segmen. class. - classifying each pixel - corresponds to the number of channel
     # retain_orig_dimension - indicate whether original dimension will remain the same
     # output_size - spatial dimension of the output
     def __init__(self, encoder_channels=(3, 16, 32, 64), # starts with 3 channels - RGB
@@ -112,29 +111,30 @@ class UNet(Module):
                  output_size=(config.roi_height,  config.INPUT_IMAGE_WIDTH)):  # same dim as input image
         super().__init__()
 
-        # initialize the encoder and decoder
+        # Initialize the encoder and decoder
         self.encoder = Encoder(encoder_channels)
         self.decoder = Decoder(decoder_channels)
 
-        # initialize the regression head and store the class variables
+        # Initialize the regression head and store the class variables
         self.head = Conv2d(decoder_channels[-1], channel_classes_number, 1)
         self.retain_orig_dimension = retain_orig_dimension
         self.output_size = output_size
 
     def forward(self, x):
-        # grab the features from the encoder
+        # Grab the features from the encoder
         encoder_features = self.encoder(x)
 
-        # pass the encoder features through decoder making sure that their dimensions are suited for concatenation
-        # on the decoder side, we utilize the encoder feature maps from the last block to the first
+        # Pass the encoder features through decoder - making sure dimensions are suited for concatenation
+        # Utilize the encoder feature maps from the last block to the first (on the decoder side)
         decoder_features = self.decoder(encoder_features[::-1][0],
                                         encoder_features[::-1][1:])
 
-        # pass the decoder features through the regression head to obtain the segmentation mask
+        # Pass the decoder features through the regression head to obtain the segmentation mask
         segmentation_map = self.head(decoder_features)
 
-        # check to see if retaining the original output dimensions and if so, then resize the output to match them
+        # Check to see if retaining the original output dimensions -> resize the output to match them
         if self.retain_orig_dimension:
             segmentation_map = F.interpolate(segmentation_map, self.output_size)
-        # return the final segmentation map
+
+        # Return the final segmentation map
         return segmentation_map

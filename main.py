@@ -17,7 +17,7 @@ unet = LaneDetector(model_path=model_path, temporal_window=15)
 # Initialize video capture
 video_capture = VideoCapture(video_path='video_capture/test_curved.mp4')
 
-# Initialize Lane detector and lane marking objects
+
 
 # Initialize trajectory estimator
 initial_left_coeffs = []
@@ -74,6 +74,9 @@ while True:
 
     # Project centers into the frame
     #lane_marking.draw_lane_center()
+
+    # Write the frame into the output video
+    output_video.write(frame)
 
     # Display the frame
     cv2.imshow('Lane Detection: U-Net', frame)

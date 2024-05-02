@@ -47,7 +47,3 @@ class Trajectory_estimator:
         self.trajectory = center_curve
 
         return self.trajectory
-
-    def draw_trajectory(self):
-        trajectory = self.trajectory
-        cv2.draw
