@@ -215,7 +215,7 @@ class LaneMarking:
 
             avg_coeffs = np.mean(prev, axis=0)
             avg_coefficients[j] = avg_coeffs
-        print('avg_coefficients:', avg_coefficients[1])
+        return avg_coefficients
 
 
     def project_lane_marking(self):
@@ -242,11 +242,6 @@ class LaneMarking:
             topmost = tuple(contour[contour[:, :, 1].argmin()][0])
             bottommost = tuple(contour[contour[:, :, 1].argmax()][0])
 
-            #leftmost = tuple(self.largest_contours[self.largest_contours[:, :, 0].argmin()][0])
-            #rightmost = tuple(self.largest_contours[self.largest_contours[:, :, 0].argmax()][0])
-            #topmost = tuple(self.largest_contours[self.largest_contours[:, :, 1].argmin()][0])
-            #bottommost = tuple(self.largest_contours[self.largest_contours[:, :, 1].argmax()][0])
-
             # Draw points on the frame to visualize them
             cv2.circle(self.frame, leftmost, 5, (255, 0, 0), -1)
             cv2.circle(self.frame, rightmost, 5, (255, 0, 0), -1)
@@ -258,37 +253,4 @@ class LaneMarking:
                 # Calculate moments of the contour
                 get_center_of_mass(self.frame, contour)
 
-        # Calculate the x-coordinate for the vertical line (middle of the image)
-        middle_x = self.frame.shape[1] // 2
-
-        # Draw the vertical middle line on the frame
-        cv2.line(self.frame, (middle_x, 0), (middle_x, self.frame.shape[0]), [0, 255, 255], thickness=2)
-
-        # first dividing line
-        cv2.line(self.frame, ((self.frame.shape[1] // 5), 0), ((self.frame.shape[1] // 5), self.frame.shape[0]), [0, 255, 255], thickness=2)
         return
-    """
-    def draw_lane_center(self):
-        # Draw the lane center line between the curves with indices 1 and 2
-        if len(self.fitted_curves) >= 3:
-            # Get the fitted curves for indices 1 and 2
-            curve1 = self.fitted_curves[1]
-            curve2 = self.fitted_curves[2]
-
-            # Choose a y-coordinate where you want to draw the lane center line
-            y_center = self.frame.shape[0] // 2
-
-            # Calculate the x-coordinates of the curves at the chosen y-coordinate
-            x_curve1 = np.polyval(curve1, y_center) #- self.correction_shift)
-            x_curve2 = np.polyval(curve2, y_center) #- self.correction_shift)
-
-            # Calculate the average x-coordinate between the curves
-            lane_center_x = (x_curve1 + x_curve2) / 2
-
-            # Draw the lane center line
-            cv2.line(self.frame, (int(lane_center_x), y_center), (int(lane_center_x), self.correction_shift),
-                     color=(255, 150, 0), thickness=5)
-
-    #def project_lane_centers():
-        # Project lane centers on the frame
-    """
