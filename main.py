@@ -1,5 +1,4 @@
 # Main script brings all parts together
-import numpy as np
 
 # Import classes and functions from modules
 import model
@@ -29,7 +28,6 @@ trajectory_estimator = Trajectory_estimator(initial_left_coeffs, initial_right_c
 while True:
     # Capture frame of a video
     frame = video_capture.capture_frame()
-
 
     if frame is None:
         break  # Exit the loop at the end of the video
