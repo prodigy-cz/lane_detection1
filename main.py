@@ -71,13 +71,6 @@ while True:
     trajectory_estimator.update_boundaries(left_coeffs, right_coeffs)
     trajectory_estimator.calculate_trajectory(frame, binary_mask)
 
-
-    # Project centers into the frame
-    #lane_marking.draw_lane_center()
-
-    # Write the frame into the output video
-    output_video.write(frame)
-
     # Display the frame
     cv2.imshow('Lane Detection: U-Net', frame)
 
