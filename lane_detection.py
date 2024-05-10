@@ -95,14 +95,12 @@ class LaneDetector:
 
         binary_mask = binary_mask.astype(np.uint8)
         binary_mask_cropped = binary_mask.copy()
-        binary_mask = binary_mask_cropped[280:, :]
-
-        # Apply gaussian and median blur
-        #binary_mask = cv2.GaussianBlur(binary_mask, (5, 5), 0)
 
         kernel_ero = np.ones((5, 5), np.uint8) # Define a kernel for erosion
         kernel_dil = np.ones((4, 4), np.uint8)  # Define a kernel for dilation
         kernel = np.ones((4, 4), np.uint8)  # Define a kernel for dilation
+
+        binary_mask = binary_mask_cropped[280:, :]
 
         # Apply Erosion / Dilation / Median Blur / Closing / Opening
         binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=1)
@@ -110,6 +108,9 @@ class LaneDetector:
         binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=1)
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_OPEN, kernel)
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
+
+        # Apply gaussian and median blur
+        #binary_mask = cv2.GaussianBlur(binary_mask, (5, 5), 0)
 
         #binary_mask = cv2.resize(binary_mask, (config.INPUT_IMAGE_WIDTH, config.roi_height))
         return binary_mask

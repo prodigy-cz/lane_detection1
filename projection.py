@@ -3,7 +3,10 @@
 # Imports
 import cv2
 import numpy as np
+from sklearn.cluster import KMeans
 
+def cluster(X):
+    kmeans = KMeans(n_clusters=3, random_state=0, n_init="auto").fix(X)
 
 def get_center_of_mass(frame, contour):
     # for contour in self.largest_contours:
@@ -19,9 +22,79 @@ def get_center_of_mass(frame, contour):
             cen_of_mass = [cx, cy]
 
             # Draw a circle at the center of mass
-            cv2.circle(frame, (cx, cy), 5, (5, 94, 255), -1)
+            #cv2.circle(frame, (cx, cy), 5, (5, 94, 255), -1)
             return cen_of_mass
 
+
+def calculate_distance(x1, x2):
+    return np.abs(x1 - x2) # return absolute x distance
+
+
+def get_intersection(frame, point1, point2):
+
+    # Get intersection of line with bottom of the frame
+
+    # Frame height
+    height = frame.shape[0]
+
+    # Check if the line is not vertical
+    if point2[0] - point1[0] != 0:
+        # Calculate slope m
+        m = (point2[1] - point1[1]) / (point2[0] - point1[0])
+        # Calculate y intersect
+        b = point1[1] - m * point1[0]
+
+        # Calculate the intersection with bottom edge
+        x_intersection = int((height - b) / m)
+
+    else:
+        # If the line is vertical, x_intersection = x coordinate of one of the points
+        x_intersection = point1[0]
+
+    # Intersection point
+    intersection_point = (x_intersection, height)
+    # Draw the circle on the image
+    cv2.circle(frame, intersection_point, radius=5, color=(0, 255, 255), thickness=-1)  # Yellow circle
+
+    print(intersection_point)
+
+    return intersection_point
+
+"""
+def calculate_weight_factors(intersection_points):
+    # Line Segment weighting strategy implementation
+    # Line Segment weighting strategy implementation
+    weights = []
+    num_points = len(intersection_points)
+
+    # Check if there's only one intersection point
+    if num_points == 1:
+        # Set a default weight value
+        weights.append(1.0)
+    else:
+        for i, point_i in enumerate(intersection_points):
+            weight = 0
+            for j, point_j in enumerate(intersection_points):
+                if i != j:  # Exclude current point from distance calculation
+                    distance = calculate_distance(point_i, point_j)
+                    weight += np.exp(-distance)
+            weights.append(weight)
+
+    return weights
+"""
+"""
+def filter_outlying_arrays(list_of_centers_arrays, intersection_points, threshold):
+    filtered_arrays = []
+    weights = calculate_weight_factors(intersection_points)
+    print('weights: ', weights)
+    max_weight = max(weights)
+    for i, weight in enumerate(weights):
+        if weight / max_weight >= threshold:
+            print('i: ', i)
+            print('list_of_centers_arrays: ', list_of_centers_arrays)
+            filtered_arrays.extend(list_of_centers_arrays[i])
+    return filtered_arrays
+"""
 
 # Define blank lists to store curves coefficients
 prev_fitted_curves = [[], []]
@@ -57,10 +130,12 @@ class LaneMarking:
 
         # Draw the largest contours
         #for contour in self.largest_contours:
-        #    cv2.drawContours(self.frame, self.largest_contours, -1, (0, 0, 255), 2)
+            #cv2.drawContours(self.frame, self.largest_contours, -1, (0, 0, 255), 2)
+
+
     def split_contours(self):
         # Split contours row-wise into smaller segments
-        num_segments = 100
+        num_segments = 40
         segment_height = self.frame.shape[0] // num_segments # height of the segments after split
         contours = self.largest_contours.copy()
         #print('\n New Frame:')
@@ -91,8 +166,8 @@ class LaneMarking:
             contours_segments.append(contour_segments)
 
             # Iterate over contour segments and draw each contour separately
-            #for segment_contour in contour_segments:
-            #   cv2.drawContours(self.frame, [segment_contour], -1, color=(0, 100, 100), thickness=2)
+            for segment_contour in contour_segments:
+               cv2.drawContours(self.frame, [segment_contour], -1, color=(0, 100, 100), thickness=2)
 
         return contours_segments
 
@@ -100,6 +175,12 @@ class LaneMarking:
         contours_segments = contours_segments
         left_centers = []
         right_centers = []
+        left_intersection_points = []
+        right_intersection_points = []
+        left_filtered_centers = []
+        right_filtered_centers = []
+        filtering_threshold = 0.5
+
         for contour_segments in contours_segments:
             centers_of_mass = []
             for contour_segment in contour_segments:
@@ -111,23 +192,59 @@ class LaneMarking:
             # Convert centers_of_mass to a np array
             centers_array = np.array(centers_of_mass)
 
-            # Check if there are any centers of mass
-            if centers_array.size > 0:
+            # Check if there are at least two centers of mass
+            if centers_array.size > 1:
                 # Check the average position of the center of mass
                 average_x = np.mean(centers_array[:, 0])
-                print('average_x:', average_x)
+                #print('average_x:', average_x)
 
                 # Check if the average center is close to the center of the image (center of the vehicle)
                 if (self.frame.shape[1] // 4) <= average_x < (self.frame.shape[1] // 2):
-                    left_centers.extend(centers_array)
+                    left_centers.append(centers_array)
+                    print('left centers: ', left_centers)
 
                 elif (self.frame.shape[1] // 2) <= average_x < (self.frame.shape[1] * (1 - (1 // 4))):
-                    right_centers.extend(centers_array)
-
+                    right_centers.append(centers_array)
+                    print('right_centers: ', right_centers)
             else:
                 print("No valid centers of mass found")
 
-        return left_centers, right_centers
+        for centers_array in left_centers:
+            min_y_point = centers_array[np.argmin(centers_array[:, 1])]  # Picks point with min y value
+            max_y_point = centers_array[np.argmax(centers_array[:, 1])]  # Picks point with min y value
+            intersection_point = get_intersection(self.frame, min_y_point, max_y_point)
+            print('x_intersection_point: ', intersection_point)
+            left_intersection_points.append(intersection_point)
+
+        for k, point in enumerate(left_intersection_points):
+            if (self.frame.shape[1] * (3 // 8)) <= point[0] < (self.frame.shape[1] * (8 // 8)):
+                left_filtered_centers.extend(left_centers[k])
+
+        for centers_array in right_centers:
+            min_y_point = centers_array[np.argmin(centers_array[:, 1])]  # Picks point with min y value
+            max_y_point = centers_array[np.argmax(centers_array[:, 1])]  # Picks point with min y value
+            intersection_point = get_intersection(self.frame, min_y_point, max_y_point)
+            right_intersection_points.append(intersection_point)
+
+
+        for w, point in enumerate(right_intersection_points):
+            if (self.frame.shape[1] * (5 // 8)) <= point[0] < (self.frame.shape[1] * (8 // 8)):
+                right_filtered_centers.extend(right_centers[w])
+
+        print('left_intersection_points: ', left_intersection_points)
+        #left_filtered_centers = filter_outlying_arrays(left_centers, left_intersection_points, filtering_threshold)
+        #right_filtered_centers = filter_outlying_arrays(right_centers, right_intersection_points, filtering_threshold)
+
+
+        if not left_filtered_centers or not right_filtered_centers:
+            print("No valid left or right filtered centers found.")
+            # Handle the case when no valid centers are found, for example:
+            return [], []
+
+        for point in left_filtered_centers:
+            cv2.circle(self.frame, point, 5, (255, 255, 255), -1)
+
+        return left_filtered_centers, right_filtered_centers
 
 
     def compare_frame(self, lane_num):
@@ -180,9 +297,12 @@ class LaneMarking:
             right_centers = np.vstack(right_centers)
             x_right_values = right_centers[:, 0]  # Extracting x values
             y_right_values = right_centers[:, 1]  # Extracting y values
+
         else:
             print("Right_centers list is empty.")
             return
+
+
 
         left_coefficients = np.polyfit(y_left_values, x_left_values, degree)
         right_coefficients = np.polyfit(y_right_values, x_right_values, degree)
@@ -205,6 +325,9 @@ class LaneMarking:
                     curves_for_avg[1].append(coefficients)
                 else:
                     print('More than 2 lanes detected, i =', i)
+        print('fitted_curves: ', self.fitted_curves)
+        left_coeffs, right_coeffs = self.fitted_curves
+        return left_coeffs, right_coeffs
 
     def avg_polynomials(self, window=5): # window = num of predictions in count
         global avg_coefficients
@@ -222,8 +345,8 @@ class LaneMarking:
     def project_lane_marking(self):
         # Project the lane marking into the frame
         # Iterate over the list with curves coefficients
-        # for curve_coefficients in self.fitted_curves: # Without averaging
-        for curve_coefficients in avg_coefficients:
+        # for curve_coefficients in avg_coefficients: # With averaging
+        for curve_coefficients in self.fitted_curves:
             # Generate y values
             y_values = np.linspace(start=self.correction_shift, stop=self.frame.shape[0]) # Correction shift -> start projection from this part of image
             # Calculate x values with polynomial coefficients
@@ -234,6 +357,8 @@ class LaneMarking:
 
             # Draw the curve on the frame
             cv2.polylines(self.frame, [curve_points], isClosed=False, color=(0, 255, 0), thickness=5)
+
+
 
         for contour in self.largest_contours:
 
@@ -250,9 +375,11 @@ class LaneMarking:
             cv2.circle(self.frame, bottommost, 5, (255, 0, 0), -1)
 
             # Check if the contour has at least 5 points
-            if len(contour) >= 5:
+            #if len(contour) >= 5:
                 # Calculate moments of the contour
-                get_center_of_mass(self.frame, contour)
+                #get_center_of_mass(self.frame, contour)
+
+            #get_intersection(self.frame, topmost, bottommost)
 
         # Draw the center of the vehicle into the final frame
         bottom_center_x = self.frame.shape[1] // 2
