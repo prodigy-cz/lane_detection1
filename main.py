@@ -12,10 +12,10 @@ from trajectory_estimator import Trajectory_estimator
 # Define model path and load model
 model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
 
-unet = LaneDetector(model_path=model_path, temporal_window=15)
+unet = LaneDetector(model_path=model_path, temporal_window=5)
 
 # Initialize video capture
-video_capture = VideoCapture(video_path='video_capture/test_curved2.mp4')
+video_capture = VideoCapture(video_path='video_capture/test_curved.mp4')
 
 
 
@@ -57,6 +57,8 @@ while True:
     # Only current lane's boundaries are left after filtering
     left_filtered_centers, right_filtered_centers = lane_marking.filter_contours(contours_segments=contours_segments)
 
+    lane_marking.check_detection()
+
     """
     # Fit detected contours with polynomials and add their coefficients in marking history (prev_fitted_contours)
     lane_marking.fit_polynomial_curve(left_centers, right_centers)
@@ -67,7 +69,7 @@ while True:
     """
     # Without averaging
     if left_filtered_centers and right_filtered_centers:
-        left_coeffs, right_coeffs = lane_marking.fit_polynomial_curve(left_filtered_centers, right_filtered_centers)
+        left_coeffs, right_coeffs = lane_marking.fit_polynomial_curve()
     else:
         print('Left_centers of right_centers list is empty. Unable to fit polynomials')
 

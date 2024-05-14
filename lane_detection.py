@@ -103,9 +103,9 @@ class LaneDetector:
         binary_mask = binary_mask_cropped[280:, :]
 
         # Apply Erosion / Dilation / Median Blur / Closing / Opening
-        binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=1)
+        #binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=1)
         binary_mask = cv2.medianBlur(binary_mask, 5)
-        binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=1)
+        #binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=1)
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_OPEN, kernel)
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
 
