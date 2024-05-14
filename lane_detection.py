@@ -1,13 +1,14 @@
 # Preprocessing, postprocessing and lane centers calculation
+
+# Imports
 import cv2
 import numpy as np
-# imports
 import torch
 import config
-import math
+
 
 class LaneDetector:
-    def __init__(self, model_path, temporal_window=20):
+    def __init__(self, model_path, temporal_window=10):
         self.model = self.load_lane_detection_model(model_path)
         self.temporal_window = temporal_window
         self.previous_predictions = []
@@ -103,9 +104,9 @@ class LaneDetector:
         binary_mask = binary_mask_cropped[280:, :]
 
         # Apply Erosion / Dilation / Median Blur / Closing / Opening
-        #binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=1)
+        binary_mask = cv2.erode(binary_mask, kernel_ero, iterations=1)
         binary_mask = cv2.medianBlur(binary_mask, 5)
-        #binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=1)
+        binary_mask = cv2.dilate(binary_mask, kernel_dil, iterations=1)
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_OPEN, kernel)
         #binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
 

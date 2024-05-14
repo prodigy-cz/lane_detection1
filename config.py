@@ -2,12 +2,21 @@
 import torch
 import os
 import argparse
+import numpy as np
+
+# Camera parameters
+# Camera parameters
+FOCAL_LENGTH = 528  # ZED 2 focal length for HD 720
+PITCH_ANGLE = np.deg2rad(70)  # angle towards vertical axis
+CAMERA_HEIGHT = 1.6  # meters above ground surface
+# H_FOV = np.deg2rad(101)  # ZED 2 horizontal field of view for HD 720
+V_FOV = np.deg2rad(68)  # ZED 2 vertical field of view for HD 720
 
 # Random seed number
 RANDOM_SEED = 42
 
 # Define the test split
-TEST_SPLIT = 0.125 # not split but validation/training samples ratio - default by txt file id 0.125
+TEST_SPLIT = 0.125  # not split but validation/training samples ratio - default by txt file id 0.125
 
 # Determine the device to be used for training and evaluation
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -42,9 +51,9 @@ class_weight = [30]
 THRESHOLD = 0.6
 
 # Base paths of the datasets
-TRAIN_PATH = "/content/train_image_truth_pairs.txt" # "/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_train_list-images.txt"
+TRAIN_PATH = "/content/train_image_truth_pairs.txt"  # "/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_train_list-images.txt"
 
-VALIDATION_PATH = "/content/val_image_truth_pairs.txt" # "/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_val_list-images.txt"
+VALIDATION_PATH = "/content/val_image_truth_pairs.txt"  # "/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_val_list-images.txt"
 
 # Define path for testing
 TEST_PATH = "/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_test_list-images.txt"
@@ -117,9 +126,8 @@ def parse_arguments():
 
     # Number of samples for validation
     if args.NUM_SAMPLES_TRAIN is not None:
-        args.NUM_SAMPLES_TEST = int(args.NUM_SAMPLES_TRAIN * TEST_SPLIT) # must be int
+        args.NUM_SAMPLES_TEST = int(args.NUM_SAMPLES_TRAIN * TEST_SPLIT)  # must be int
     else:
         args.NUM_SAMPLES_TEST = None
     return args
-
 

@@ -1,11 +1,10 @@
 # Imports
-import numpy as np
-
 import config
 from torch.nn import ConvTranspose2d, Conv2d, MaxPool2d, Module, ModuleList, ReLU
 from torch.nn import functional as F
 from torchvision.transforms import CenterCrop
 import torch
+
 
 class Block(Module):
     def __init__(self, in_channels, out_channels):
@@ -20,11 +19,12 @@ class Block(Module):
         # apply convolution -> relu -> convolution block t the inputs and return it
         return self.conv2(self.relu(self.conv1(x)))
 
+
 class Encoder(Module):
     def __init__(self, channels=(3, 16, 32, 64)):
         super().__init__()
 
-        # store the encoder blocks and maxpooling layer
+        # Store the encoder blocks and maxpooling layer
         # initializing the list of blocks (self.encoder_blocks) with ModuleList
         # ech block takes input channels and doubles it in the output feature map
         self.encoder_blocks = ModuleList(
@@ -36,12 +36,12 @@ class Encoder(Module):
 
     # forward function takes an image x input
     def forward(self, x):
-        # initialize an empty list to store the intermediate outputs from the blocks of the encoder - this will enable the model to pass encoder outputs to decoder where are processed with decoder feature maps
+        # Initialize an empty list to store the intermediate outputs from the blocks of the encoder - this will enable the model to pass encoder outputs to decoder where are processed with decoder feature maps
         block_outputs = []
 
         # loop through the encoder blocks
         for block in self.encoder_blocks:
-          # pass the inputs through the current encoder block, store the outputs, and then apply maxpooling on the output
+          # Pass the inputs through the current encoder block, store the outputs, and then apply maxpooling on the output
           x = block(x)
           block_outputs.append(x)
           # max poool operation on the block output
@@ -49,6 +49,7 @@ class Encoder(Module):
 
         # return the list containing the intermediate encoder outputs
         return block_outputs
+
 
 class Decoder(Module):
     # take channels tuple as input (dimensions of channels) - decoder -> decreasing dimension with factor of 2
@@ -68,36 +69,37 @@ class Decoder(Module):
             [Block(channels[i], channels[i + 1])
                 for i in range(len(channels) - 1)])
 
-    # take the feature map x and the list of intermediate outputs from encoder (encoder_features) as an input
+    # Take the feature map x and the list of intermediate outputs from encoder (encoder_features) as an input
     def forward(self, x, encoder_features):
 
-        # loop through the number of channels
+        # Loop through the number of channels
         for i in range(len(self.channels) - 1):
-            # pass the inputs through the i-th upsampler blocks
+            # Pass the inputs through the i-th upsampler blocks
             x = self.upconvs[i](x)
 
-            # crop the current features from the encoder blocks - to ensure that x and encoder_features[i] match
+            # Crop the current features from the encoder blocks - to ensure that x and encoder_features[i] match
             encoder_feature = self.crop(encoder_features[i], x)
 
-            # concatenate cropped upsampled feature map encoder_feature with current upsampled feature map x
+            # Concatenate cropped upsampled feature map encoder_feature with current upsampled feature map x
             x = torch.cat([x, encoder_feature], dim=1)
 
-            # pass the concatenated output through the current decoder block
+            # Pass the concatenated output through the current decoder block
             x = self.dec_blocks[i](x)
 
         # return the final decoder output
         return x
 
-    #crop function to take an intermediate feature map from encoder (encoder_features) and x
-    #(feature map output from the decoder) and crops the former to the dimension of the latter
+    # Crop function to take an intermediate feature map from encoder (encoder_features) and x
+    # (feature map output from the decoder) and crops the former to the dimension of the latter
     def crop(self, encoder_features, x):
 
-        #grab the dimensions of the inputs, and crop the encoder features to match the dimensions
+        # Grab the dimensions of the inputs, and crop the encoder features to match the dimensions
         (_, _, H, W) = x.shape
         encoder_features = CenterCrop([H, W])(encoder_features)
 
         # return the cropped features
         return encoder_features
+
 
 class UNet(Module):
     # encoder_channels - increase of channel dimension as the input passes through the encoder

@@ -1,13 +1,13 @@
 # Main script brings all parts together
 
 # Import classes and functions from modules
-import model
 from video_capture import VideoCapture
 from lane_detection import LaneDetector
 import projection
 import cv2
 import config
 from trajectory_estimator import Trajectory_estimator
+from vehicle_position import VehiclePositionEstimator
 
 # Define model path and load model
 model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
@@ -15,15 +15,21 @@ model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
 unet = LaneDetector(model_path=model_path, temporal_window=5)
 
 # Initialize video capture
-video_capture = VideoCapture(video_path='video_capture/test_curved.mp4')
+video_capture = VideoCapture(video_path='video_capture/test_curved2.mp4')
 
-
+# Initialize position estimator
+position_estimator = VehiclePositionEstimator(
+    config.FOCAL_LENGTH,
+    config.INPUT_IMAGE_WIDTH,
+    config.PITCH_ANGLE,
+    config.CAMERA_HEIGHT,
+    config.V_FOV
+)
 
 # Initialize trajectory estimator
 initial_left_coeffs = []
 initial_right_coeffs = []
-initial_trajectory_points = []
-trajectory_estimator = Trajectory_estimator(initial_left_coeffs, initial_right_coeffs, initial_trajectory_points)
+trajectory_estimator = Trajectory_estimator(initial_left_coeffs, initial_right_coeffs)
 
 while True:
     # Capture frame of a video
@@ -48,7 +54,7 @@ while True:
     lane_marking = projection.LaneMarking(binary_mask, frame)
 
     # Extract lane marking
-    lane_marking.extract_lane_markings(num_contours=5) # Set a number of the biggest contours to be detected
+    lane_marking.extract_lane_markings(num_contours=5)  # Set a number of the biggest contours to be detected
 
     # Segment detected contours for smoother polyfit and lane center calculation
     contours_segments = lane_marking.split_contours()
@@ -59,9 +65,12 @@ while True:
 
     lane_marking.check_detection()
 
-    """
+    # With averaging
     # Fit detected contours with polynomials and add their coefficients in marking history (prev_fitted_contours)
-    lane_marking.fit_polynomial_curve(left_centers, right_centers)
+    if left_filtered_centers and right_filtered_centers:
+        lane_marking.fit_polynomial_curve()
+    else:
+        print('Left_centers of right_centers list is empty. Unable to fit polynomials')
 
     # Interpolate the correct detections with appropriate weights
     lane_marking.avg_polynomials()
@@ -72,7 +81,7 @@ while True:
         left_coeffs, right_coeffs = lane_marking.fit_polynomial_curve()
     else:
         print('Left_centers of right_centers list is empty. Unable to fit polynomials')
-
+    """
 
     # Project lane markings into the frame
     lane_marking.project_lane_marking()
@@ -80,6 +89,10 @@ while True:
     # Update boundaries and Calculate trajectory points
     trajectory_estimator.update_boundaries(left_coeffs, right_coeffs)
     trajectory_estimator.calculate_trajectory(frame, binary_mask)
+
+    # Vehicle relative position towards the centerline
+    bottommost_point = trajectory_estimator.get_bottommost_trajectory_point()
+    position_estimator.get_relative_position(bottommost_point)
 
     # Display the frame
     cv2.imshow('Lane Detection: U-Net', frame)
