@@ -8,6 +8,8 @@ import cv2
 import config
 from trajectory_estimator import Trajectory_estimator
 from vehicle_position import VehiclePositionEstimator
+import cProfile
+import pstats
 
 # Define model path and load model
 model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
@@ -92,7 +94,14 @@ while True:
 
     # Vehicle relative position towards the centerline
     bottommost_point = trajectory_estimator.get_bottommost_trajectory_point()
-    position_estimator.get_relative_position(bottommost_point)
+    distance, text = position_estimator.get_relative_position(bottommost_point)
+
+    # Put distance info into frame
+    text_position = (50, 50)
+    font = cv2.FONT_HERSHEY_PLAIN
+    font_scale = 2
+    text_color = (255, 255, 255) # White in BGR format
+    cv2.putText(frame, text, text_position, font, font_scale, color=(255, 255, 255), thickness=2)
 
     # Display the frame
     cv2.imshow('Lane Detection: U-Net', frame)

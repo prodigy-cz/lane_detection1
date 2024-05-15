@@ -19,7 +19,7 @@ class VehiclePositionEstimator:
 
         # Horizontal distance in pixels
         px_distance = vehicle_position_x - bottommost_trajectory_x
-        print(f"Pixel distance: {px_distance} px")
+        # print(f"Pixel distance: {px_distance} px")
 
         # Convert pixel distance into real distance
         rw_distance = self.px_to_rw(px_distance)
@@ -29,16 +29,16 @@ class VehiclePositionEstimator:
     def px_to_rw(self, px_distance):
         # Calculate the angle between ground vertical axis and bottom edge of view
         theta_b = self.pitch_angle - self.V_FoV / 2
-        print(f"theta_b: {np.rad2deg(theta_b):.2f} degrees")
-        print(f"Vertical FOV: {np.rad2deg(self.V_FoV):.2f} degrees")
+        # print(f"theta_b: {np.rad2deg(theta_b):.2f} degrees")
+        # print(f"Vertical FOV: {np.rad2deg(self.V_FoV):.2f} degrees")
 
         # Calculate the distance between camera center of coordinates and bottommost point
         l_c = self.camera_height / np.sin(theta_b)
-        print(f"l_c: {l_c:.2f}")
+        # print(f"l_c: {l_c:.2f}")
 
         # Calculate angle between l_c and bottommost centerline point
         beta_c = np.arctan(px_distance / self.focal_length)
-        print(f"beta_l: {np.rad2deg(beta_c):.2f} degrees")
+        # print(f"beta_l: {np.rad2deg(beta_c):.2f} degrees")
 
         # Calculate the real world distance
         rw_distance = abs(l_c * np.tan(beta_c))
@@ -48,8 +48,8 @@ class VehiclePositionEstimator:
         else:
             side = "right"
 
-        print(f"Vehicle is shifted {rw_distance:.2f} meters {side} from centerline:")
-        return rw_distance
+        text = f"Vehicle is shifted {rw_distance:.2f} m {side} from centerline"
+        return rw_distance, text
 
 
 """

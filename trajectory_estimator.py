@@ -15,7 +15,7 @@ class Trajectory_estimator:
     def update_boundaries(self, left_coeffs, right_coeffs):
         self.left_line_coeffs = left_coeffs
         self.right_line_coeffs = right_coeffs
-        print('left and right coeffs: ', self.left_line_coeffs, self.right_line_coeffs)
+        # print('left and right coeffs: ', self.left_line_coeffs, self.right_line_coeffs)
 
     def calculate_trajectory(self, frame, binary_mask):
         # Given polynomials into np arrays
@@ -41,13 +41,13 @@ class Trajectory_estimator:
         # Draw the trajectory on the frame
         for y in range(start_height, end_height, 10):
             x = int(center_curve(y))
-            cv2.circle(frame, (x, y), radius=2, color=(0, 255, 0), thickness=-1)  # Draw a filled circle for each trajectory point
+            cv2.circle(frame, (x, y), radius=2, color=(0, 255, 255), thickness=-1)  # Draw a filled circle for each trajectory point
 
         # Store the trajectory polynomial
         self.trajectory = center_curve
 
         # Bottommost trajectory point
-        bottommost_y = end_height - 1
+        bottommost_y = end_height # - 1
         # Get corresponding x value
         bottommost_x = center_curve(bottommost_y)
 
@@ -57,5 +57,5 @@ class Trajectory_estimator:
 
     def get_bottommost_trajectory_point(self):
         if self.bottommost_trajectory_point:
-            print(f"Bottommost point of the trajectory: {self.bottommost_trajectory_point}")
+            # print(f"Bottommost point of the trajectory: {self.bottommost_trajectory_point}")
             return self.bottommost_trajectory_point

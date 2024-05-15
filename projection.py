@@ -44,7 +44,7 @@ class LaneMarking:
 
     def split_contours(self):
         # Split contours row-wise into smaller segments
-        num_segments = 100
+        num_segments = 80
         segment_height = self.frame.shape[0] // num_segments  # height of the segments after split
         contours = self.largest_contours.copy()
         # print('\n New Frame:')
@@ -77,8 +77,8 @@ class LaneMarking:
             contours_segments.append(contour_segments)
 
             # Iterate over contour segments and draw each contour separately
-            for segment_contour in contour_segments:
-                cv2.drawContours(self.frame, [segment_contour], -1, color=(0, 100, 100), thickness=2)
+            # for segment_contour in contour_segments:
+                # cv2.drawContours(self.frame, [segment_contour], -1, color=(0, 100, 100), thickness=2)
 
         return contours_segments
 
@@ -150,6 +150,8 @@ class LaneMarking:
         self.left_intersection_points = left_intersection_points
         self.right_intersection_points = right_intersection_points
 
+        for center in left_filtered_centers:
+            cv2.circle(self.frame, center, 5, (255, 255, 0), -1)
         # print('intersection_points: ', self.left_intersection_points)
 
         return left_filtered_centers, right_filtered_centers
@@ -226,7 +228,7 @@ class LaneMarking:
         y_max = self.frame.shape[0]
         y_min = y_max - 80
         # Draw horizontal line for visual check
-        cv2.line(self.frame, (0, y_min), (self.frame.shape[1], y_min), (0, 255, 0), 2)
+        # cv2.line(self.frame, (0, y_min), (self.frame.shape[1], y_min), (0, 255, 0), 2)
 
         # Check if there are any points in the left_lane and right_lane within the specified range
         left_bottom = any(y_min <= point[1] <= y_max for point in self.left_filtered_centers)  # True or False
@@ -259,6 +261,7 @@ class LaneMarking:
             # Draw the curve on the frame
             cv2.polylines(self.frame, [curve_points], isClosed=False, color=(0, 255, 0), thickness=5)
 
+        """
         for contour in self.largest_contours:
 
             # Find leftmost, rightmost, topmost, and bottommost points of the contour
@@ -272,6 +275,7 @@ class LaneMarking:
             cv2.circle(self.frame, rightmost, 5, (255, 0, 0), -1)
             cv2.circle(self.frame, topmost, 5, (255, 0, 0), -1)
             cv2.circle(self.frame, bottommost, 5, (255, 0, 0), -1)
+        """
 
         # Draw the center of the vehicle into the final frame
         bottom_center_x = self.frame.shape[1] // 2

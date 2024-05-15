@@ -1,3 +1,4 @@
+# Imports
 from sklearn.cluster import DBSCAN
 import numpy as np
 import cv2
@@ -55,8 +56,8 @@ def get_intersection(frame, point1, point2):
 
     # Intersection point
     intersection_point = [x_intersection, height]
-    # Draw the circle on the image
-    cv2.circle(frame, intersection_point, radius=5, color=(0, 255, 255), thickness=-1)  # Yellow circle
+    # Draw the intersection point on the image
+    # cv2.circle(frame, intersection_point, radius=5, color=(0, 255, 255), thickness=-1)  # Yellow circle
 
     return intersection_point
 
@@ -68,7 +69,7 @@ def calculate_intersections(clustered_centers, frame, intersection_points, filte
         min_y_point = centers_array[np.argmin(centers_array[:, 1])]
         max_y_point = centers_array[np.argmax(centers_array[:, 1])]
         intersection_point = get_intersection(frame, min_y_point, max_y_point)
-        print(f'Calculated intersection point: {intersection_point}')
+        # print(f"Calculated intersection point: {intersection_point}")
 
         # Check if the intersection_point is within range
         if x_range[0] <= intersection_point[0] < x_range[1]:
@@ -81,7 +82,7 @@ def calculate_intersections(clustered_centers, frame, intersection_points, filte
     intersection_points.extend(valid_intersection_points)
 
 
-def apply_dbscan(centers, eps=40, min_samples=2):
+def apply_dbscan(centers, eps=25, min_samples=2):
     if centers.size > 0:
         dbscan = DBSCAN(eps=eps, min_samples=min_samples)
         labels_dbscan = dbscan.fit_predict(centers)
