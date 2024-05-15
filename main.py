@@ -14,102 +14,114 @@ import pstats
 # Define model path and load model
 model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
 
-unet = LaneDetector(model_path=model_path, temporal_window=5)
 
-# Initialize video capture
-video_capture = VideoCapture(video_path='video_capture/test_curved2.mp4')
+def main():
+    unet = LaneDetector(model_path=model_path, temporal_window=5)
 
-# Initialize position estimator
-position_estimator = VehiclePositionEstimator(
-    config.FOCAL_LENGTH,
-    config.INPUT_IMAGE_WIDTH,
-    config.PITCH_ANGLE,
-    config.CAMERA_HEIGHT,
-    config.V_FOV
-)
+    # Initialize video capture
+    video_capture = VideoCapture(video_path='video_capture/test_curved2.mp4')
 
-# Initialize trajectory estimator
-initial_left_coeffs = []
-initial_right_coeffs = []
-trajectory_estimator = Trajectory_estimator(initial_left_coeffs, initial_right_coeffs)
+    # Initialize position estimator
+    position_estimator = VehiclePositionEstimator(
+        config.FOCAL_LENGTH,
+        config.INPUT_IMAGE_WIDTH,
+        config.PITCH_ANGLE,
+        config.CAMERA_HEIGHT,
+        config.V_FOV
+    )
 
-while True:
-    # Capture frame of a video
-    frame = video_capture.capture_frame()
+    # Initialize trajectory estimator
+    initial_left_coeffs = []
+    initial_right_coeffs = []
+    trajectory_estimator = Trajectory_estimator(initial_left_coeffs, initial_right_coeffs)
 
-    if frame is None:
-        break  # Exit the loop at the end of the video
+    while True:
+        # Capture frame of a video
+        frame = video_capture.capture_frame()
 
-    # Preprocess the frame and apply ROI
-    pre_processed_frame = unet.pre_process_frame(frame, config.roi_coordinates)
+        if frame is None:
+            break  # Exit the loop at the end of the video
 
-    # Predict lane markings
-    prediction = unet.make_prediction(pre_processed_frame)
+        # Preprocess the frame and apply ROI
+        pre_processed_frame = unet.pre_process_frame(frame, config.roi_coordinates)
 
-    # Temporal averaging
-    avg_prediction = unet.temporal_avg()
+        # Predict lane markings
+        prediction = unet.make_prediction(pre_processed_frame)
 
-    # Predictions postprocessing
-    binary_mask = unet.post_process_prediction(prediction, avg_prediction)
+        # Temporal averaging
+        avg_prediction = unet.temporal_avg()
 
-    # Initialize the lane_marking object
-    lane_marking = projection.LaneMarking(binary_mask, frame)
+        # Predictions postprocessing
+        binary_mask = unet.post_process_prediction(prediction, avg_prediction)
 
-    # Extract lane marking
-    lane_marking.extract_lane_markings(num_contours=5)  # Set a number of the biggest contours to be detected
+        # Initialize the lane_marking object
+        lane_marking = projection.LaneMarking(binary_mask, frame)
 
-    # Segment detected contours for smoother polyfit and lane center calculation
-    contours_segments = lane_marking.split_contours()
+        # Extract lane marking
+        lane_marking.extract_lane_markings(num_contours=5)  # Set a number of the biggest contours to be detected
 
-    # Filtering contours based on contours segments center of mass average position
-    # Only current lane's boundaries are left after filtering
-    left_filtered_centers, right_filtered_centers = lane_marking.filter_contours(contours_segments=contours_segments)
+        # Segment detected contours for smoother polyfit and lane center calculation
+        contours_segments = lane_marking.split_contours()
 
-    lane_marking.check_detection()
+        # Filtering contours based on contours segments center of mass average position
+        # Only current lane's boundaries are left after filtering
+        left_filtered_centers, right_filtered_centers = lane_marking.filter_contours(contours_segments=contours_segments)
 
-    # With averaging
-    # Fit detected contours with polynomials and add their coefficients in marking history (prev_fitted_contours)
-    if left_filtered_centers and right_filtered_centers:
-        lane_marking.fit_polynomial_curve()
-    else:
-        print('Left_centers of right_centers list is empty. Unable to fit polynomials')
+        lane_marking.check_detection()
 
-    # Interpolate the correct detections with appropriate weights
-    lane_marking.avg_polynomials()
-    left_coeffs, right_coeffs = projection.avg_coefficients
-    """
-    # Without averaging
-    if left_filtered_centers and right_filtered_centers:
-        left_coeffs, right_coeffs = lane_marking.fit_polynomial_curve()
-    else:
-        print('Left_centers of right_centers list is empty. Unable to fit polynomials')
-    """
+        # With averaging
+        # Fit detected contours with polynomials and add their coefficients in marking history (prev_fitted_contours)
+        if left_filtered_centers and right_filtered_centers:
+            lane_marking.fit_polynomial_curve()
+        else:
+            print('Left_centers of right_centers list is empty. Unable to fit polynomials')
 
-    # Project lane markings into the frame
-    lane_marking.project_lane_marking()
+        # Interpolate the correct detections with appropriate weights
+        lane_marking.avg_polynomials()
+        left_coeffs, right_coeffs = projection.avg_coefficients
+        """
+        # Without averaging
+        if left_filtered_centers and right_filtered_centers:
+            left_coeffs, right_coeffs = lane_marking.fit_polynomial_curve()
+        else:
+            print('Left_centers of right_centers list is empty. Unable to fit polynomials')
+        """
 
-    # Update boundaries and Calculate trajectory points
-    trajectory_estimator.update_boundaries(left_coeffs, right_coeffs)
-    trajectory_estimator.calculate_trajectory(frame, binary_mask)
+        # Project lane markings into the frame
+        lane_marking.project_lane_marking()
 
-    # Vehicle relative position towards the centerline
-    bottommost_point = trajectory_estimator.get_bottommost_trajectory_point()
-    distance, text = position_estimator.get_relative_position(bottommost_point)
+        # Update boundaries and Calculate trajectory points
+        trajectory_estimator.update_boundaries(left_coeffs, right_coeffs)
+        trajectory_estimator.calculate_trajectory(frame, binary_mask)
 
-    # Put distance info into frame
-    text_position = (50, 50)
-    font = cv2.FONT_HERSHEY_PLAIN
-    font_scale = 2
-    text_color = (255, 255, 255) # White in BGR format
-    cv2.putText(frame, text, text_position, font, font_scale, color=(255, 255, 255), thickness=2)
+        # Vehicle relative position towards the centerline
+        bottommost_point = trajectory_estimator.get_bottommost_trajectory_point()
+        distance, text = position_estimator.get_relative_position(bottommost_point)
 
-    # Display the frame
-    cv2.imshow('Lane Detection: U-Net', frame)
+        # Put distance info into frame
+        text_position = (50, 50)
+        font = cv2.FONT_HERSHEY_PLAIN
+        font_scale = 2
+        text_color = (255, 255, 255) # White in BGR format
+        cv2.putText(frame, text, text_position, font, font_scale, color=(255, 255, 255), thickness=2)
 
-    # Break the loop if the 'q' key is pressed
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        # Display the frame
+        cv2.imshow('Lane Detection: U-Net', frame)
 
-# Release resources
-video_capture.release()
-cv2.destroyAllWindows()
+        # Break the loop if the 'q' key is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # Release resources
+    video_capture.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    # Profile the main script
+    cProfile.run('main()', 'profile_output')
+
+    # Anallyze the results
+    with open("profile_output.txt", "w") as f:
+        p = pstats.Stats('profile_output', stream=f)
+        p.sort_stats('cumulative').print_stats(10)
