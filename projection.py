@@ -133,11 +133,11 @@ class LaneMarking:
         right_clustered_centers = apply_dbscan(right_centers)
 
         # Calculate intersections
-        left_x_range = self.frame.shape[1] * 2 // 8, self.frame.shape[1] * 4 // 8
+        left_x_range = self.frame.shape[1] * 1 // 8, self.frame.shape[1] * 4 // 8
         calculate_intersections(left_clustered_centers, self.frame, left_intersection_points, left_filtered_centers,
                                 left_x_range)
 
-        right_x_range = self.frame.shape[1] * 5 // 8, self.frame.shape[1] * 7 // 8
+        right_x_range = self.frame.shape[1] * 4 // 8, self.frame.shape[1] * 7 // 8
         calculate_intersections(right_clustered_centers, self.frame, right_intersection_points, right_filtered_centers,
                                 right_x_range)
 
@@ -152,6 +152,7 @@ class LaneMarking:
 
         for center in left_filtered_centers:
             cv2.circle(self.frame, center, 5, (255, 255, 0), -1)
+
         # print('intersection_points: ', self.left_intersection_points)
 
         return left_filtered_centers, right_filtered_centers

@@ -8,8 +8,7 @@ import cv2
 import config
 from trajectory_estimator import Trajectory_estimator
 from vehicle_position import VehiclePositionEstimator
-import cProfile
-import pstats
+
 
 # Define model path and load model
 model_path = 'models/unet_lane_detection-TuSimple_01_roi.pth'
@@ -19,7 +18,7 @@ def main():
     unet = LaneDetector(model_path=model_path, temporal_window=5)
 
     # Initialize video capture
-    video_capture = VideoCapture(video_path='video_capture/test_curved2.mp4')
+    video_capture = VideoCapture(video_path='video_capture/test_curved.mp4')
 
     # Initialize position estimator
     position_estimator = VehiclePositionEstimator(
@@ -118,10 +117,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # Profile the main script
-    cProfile.run('main()', 'profile_output')
+    main()
 
-    # Anallyze the results
-    with open("profile_output.txt", "w") as f:
-        p = pstats.Stats('profile_output', stream=f)
-        p.sort_stats('cumulative').print_stats(10)

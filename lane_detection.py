@@ -13,6 +13,7 @@ class LaneDetector:
         self.temporal_window = temporal_window
         self.previous_predictions = []
 
+
     def load_lane_detection_model(self, model_path):
         # Load the model
         print("[INFO: ] loading up model...")
