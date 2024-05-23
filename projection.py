@@ -42,29 +42,25 @@ class LaneMarking:
         # for contour in self.largest_contours:
         # cv2.drawContours(self.frame, self.largest_contours, -1, (0, 0, 255), 2)
 
+    # Split contours row-wise into smaller segments
     def split_contours(self):
-        # Split contours row-wise into smaller segments
         num_segments = 80
-        segment_height = self.frame.shape[0] // num_segments  # height of the segments after split
+        segment_height = self.frame.shape[0] // num_segments  # Height of the segments after split
         contours = self.largest_contours.copy()
-        # print('\n New Frame:')
-
         contours_segments = []  # List of segments of all contours
+
         for contour in contours:
-            # print('\n New Contour:')
             contour_segments = []  # list of segments of one contour
             for i in range(num_segments):
                 # Define segments boundaries for current segment
                 start_y = i * segment_height  # Starting y value
                 end_y = min(start_y + segment_height, self.frame.shape[0])  # End y value with min for cases end_y >
                 # image height
-
                 # Store points of the segment
                 segment_points = []
                 for point in contour:
                     if start_y <= point[0][1] < end_y:
                         segment_points.append(point)
-
                 # Create contour from segment_points
                 contour_segment = np.array(segment_points)
 
@@ -72,14 +68,8 @@ class LaneMarking:
                     # If the segment consists of some points append the segment to the list of segment of the current
                     # contour
                     contour_segments.append(contour_segment)
-
             # Append segments of current contour to the list of segments of all contours
             contours_segments.append(contour_segments)
-
-            # Iterate over contour segments and draw each contour separately
-            # for segment_contour in contour_segments:
-                # cv2.drawContours(self.frame, [segment_contour], -1, color=(0, 100, 100), thickness=2)
-
         return contours_segments
 
     def filter_contours(self, contours_segments):
@@ -150,8 +140,8 @@ class LaneMarking:
         self.left_intersection_points = left_intersection_points
         self.right_intersection_points = right_intersection_points
 
-        for center in left_filtered_centers:
-            cv2.circle(self.frame, center, 5, (255, 255, 0), -1)
+        #for center in left_filtered_centers:
+         #   cv2.circle(self.frame, center, 5, (255, 255, 0), -1)
 
         # print('intersection_points: ', self.left_intersection_points)
 
@@ -180,7 +170,6 @@ class LaneMarking:
 
         left_coefficients = np.polyfit(y_left_values, x_left_values, degree)
         right_coefficients = np.polyfit(y_right_values, x_right_values, degree)
-
         self.fitted_curves = left_coefficients, right_coefficients
 
         for i, coefficients in enumerate(self.fitted_curves):
@@ -192,7 +181,6 @@ class LaneMarking:
             else:
                 print('More than 2 lanes detected, i =', i)
 
-        # print('fitted_curves: ', self.fitted_curves)
         left_coeffs, right_coeffs = self.fitted_curves
         return left_coeffs, right_coeffs
 
@@ -209,50 +197,30 @@ class LaneMarking:
             avg_coefficients[j] = avg_coeffs
         return avg_coefficients
 
-    # Adds average intersection point to lane centers
-    def add_bottom_point(self, intersection_points, lane_centers, y_max):
-        # Calculate average intersection x value
-        points_array = np.array(intersection_points)
-        x_values = points_array[:, 0]
-        avg_x = np.mean(x_values)
-        bottom_point = [avg_x, y_max]
-        # Add the point to lane centers for polynomial fitting
-        lane_centers.append(bottom_point)
-        return
-
     # Checks whether there are any centers close to the bottom of the image and add one if needed
     def check_detection(self):
         if not self.left_intersection_points or not self.right_intersection_points:
             return
-
         # Define range of y-values for the bottom of the image
         y_max = self.frame.shape[0]
         y_min = y_max - 80
-        # Draw horizontal line for visual check
-        # cv2.line(self.frame, (0, y_min), (self.frame.shape[1], y_min), (0, 255, 0), 2)
-
         # Check if there are any points in the left_lane and right_lane within the specified range
-        left_bottom = any(y_min <= point[1] <= y_max for point in self.left_filtered_centers)  # True or False
-        right_bottom = any(y_min <= point[1] <= y_max for point in self.right_filtered_centers)  # True or False
-
-        # print("Left lane detected:", left_bottom)
-        # print("Right lane detected:", right_bottom)
-
+        left_bottom = any(y_min <= point[1] <= y_max for point in self.left_filtered_centers)
+        right_bottom = any(y_min <= point[1] <= y_max for point in self.right_filtered_centers)
         # Add a point to the lane list where no center is detected
         if not left_bottom:
-            self.add_bottom_point(self.left_intersection_points, self.left_filtered_centers, y_max)
-
+            add_bottom_point(self.left_intersection_points, self.left_filtered_centers, y_max)
         if not right_bottom:
-            self.add_bottom_point(self.left_intersection_points, self.left_filtered_centers, y_max)
+            add_bottom_point(self.left_intersection_points, self.left_filtered_centers, y_max)
 
+    # Project the lane marking into the frame
     def project_lane_marking(self):
-        # Project the lane marking into the frame
         # Iterate over the list with curves coefficients
-        # for i, curve_coefficients in enumerate(self.fitted_curves): # Without averaging
         for i, curve_coefficients in enumerate(avg_coefficients):
             # Generate y values
-            y_curve = np.linspace(start=(self.frame.shape[0] - 1), stop=self.correction_shift)  # Correction shift ->
-            # start projection from this part of image
+            y_curve = np.linspace(start=(self.frame.shape[0] - 1), stop=self.correction_shift)  # Correction
+            # shift - start projection from this part of the image
+
             # Calculate x values with polynomial coefficients
             x_curve = np.polyval(curve_coefficients, y_curve)
 

@@ -4,7 +4,7 @@ import lane_detection
 import numpy as np
 import cv2
 
-class Trajectory_estimator:
+class TrajectoryEstimator:
     def __init__(self, left_coeffs, right_coeffs):
         # Initialise Trajectory estimator with given lane boundaries (countours segments CoM points)
         self.left_line_coeffs = left_coeffs
@@ -15,6 +15,8 @@ class Trajectory_estimator:
     def update_boundaries(self, left_coeffs, right_coeffs):
         self.left_line_coeffs = left_coeffs
         self.right_line_coeffs = right_coeffs
+
+
         # print('left and right coeffs: ', self.left_line_coeffs, self.right_line_coeffs)
 
     def calculate_trajectory(self, frame, binary_mask):
@@ -25,9 +27,7 @@ class Trajectory_estimator:
         # Evaluate polynomials
         start_height = frame.shape[0] - binary_mask.shape[0]
         end_height = frame.shape[0]
-        y_values = np.linspace(start=start_height, stop=end_height)  # Correction shift -> start projection from this part of image
-
-        # Evaluate polynomials
+        y_values = np.linspace(start=start_height, stop=end_height)
         left_points = np.polyval(left_coeffs, y_values)
         right_points = np.polyval(right_coeffs, y_values)
 
@@ -57,5 +57,4 @@ class Trajectory_estimator:
 
     def get_bottommost_trajectory_point(self):
         if self.bottommost_trajectory_point:
-            # print(f"Bottommost point of the trajectory: {self.bottommost_trajectory_point}")
             return self.bottommost_trajectory_point

@@ -82,6 +82,17 @@ def calculate_intersections(clustered_centers, frame, intersection_points, filte
     intersection_points.extend(valid_intersection_points)
 
 
+def add_bottom_point(intersection_points, lane_centers, y_max):
+    # Calculate average intersection x value
+    points_array = np.array(intersection_points)
+    x_values = points_array[:, 0]
+    avg_x = np.mean(x_values)
+    bottom_point = [avg_x, y_max]
+    # Add the point to lane centers for polynomial fitting
+    lane_centers.append(bottom_point)
+    return
+
+
 def apply_dbscan(centers, eps=25, min_samples=2):
     if centers.size > 0:
         dbscan = DBSCAN(eps=eps, min_samples=min_samples)

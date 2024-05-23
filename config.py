@@ -48,7 +48,7 @@ roi_coordinates = (0, roi_start_y, roi_width, roi_height)
 class_weight = [30]
 
 # Define threshold to filter weak predictions
-THRESHOLD = 0.6
+THRESHOLD = 0.75
 
 # Base paths of the datasets
 TRAIN_PATH = "/content/train_image_truth_pairs.txt"  # "/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_train_list-images.txt"

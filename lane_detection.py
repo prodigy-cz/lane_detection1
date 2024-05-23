@@ -65,27 +65,16 @@ class LaneDetector:
         if num_predictions <= 1:
             return None
 
-        # exponential decay
+        # Decay = series of products
         decay_rate = 0.7
-        #weights = [math.exp(-decay_rate * i) for i in range(num_predictions)]
-
-        # linear decay
-        # weights = [1 - i / num_predictions for i in range(num_predictions)]
-
-        # decay = series of products
         weights = [1.0]
         for i in range(1, num_predictions):
             weights.append(weights[-1] * decay_rate)
 
-        # both decays
         total_weight = sum(weights)
         normalized_weights = [j / total_weight for j in weights]
         weighted_predictions = [p * j for p, j in zip(self.previous_predictions, normalized_weights)]
         avg_prediction = sum(weighted_predictions)
-        #print('prediction: ', avg_prediction)
-
-        # standard
-        #avg_prediction = sum(self.previous_predictions) / num_predictions
         return avg_prediction
 
     def post_process_prediction(self, prediction, avg_prediction, threshold=config.THRESHOLD):
