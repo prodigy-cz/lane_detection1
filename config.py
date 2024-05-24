@@ -7,9 +7,8 @@ import numpy as np
 # Camera parameters
 # Camera parameters
 FOCAL_LENGTH = 528  # ZED 2 focal length for HD 720
-PITCH_ANGLE = np.deg2rad(70)  # angle towards vertical axis
-CAMERA_HEIGHT = 1.6  # meters above ground surface
-# H_FOV = np.deg2rad(101)  # ZED 2 horizontal field of view for HD 720
+PITCH_ANGLE = np.deg2rad(94)  # angle towards vertical axis
+CAMERA_HEIGHT = 1.35  # meters above ground surface
 V_FOV = np.deg2rad(68)  # ZED 2 vertical field of view for HD 720
 
 # Random seed number
@@ -45,10 +44,10 @@ roi_start_y = INPUT_IMAGE_HEIGHT - roi_height
 roi_coordinates = (0, roi_start_y, roi_width, roi_height)
 
 # Class weight to eliminate class imbalances
-class_weight = [30]
+class_weight = [52]
 
 # Define threshold to filter weak predictions
-THRESHOLD = 0.75
+THRESHOLD = 0.7
 
 # Base paths of the datasets
 TRAIN_PATH = "/content/train_image_truth_pairs.txt"  # "/content/drive/MyDrive/Colab_Notebooks/tvtLane/my_train_list-images.txt"

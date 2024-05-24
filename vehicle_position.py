@@ -1,3 +1,6 @@
+# Vehicle position estimation
+
+# Imports
 import numpy as np
 
 
@@ -41,23 +44,3 @@ class VehiclePositionEstimator:
         # Assign statement for visualization
         text = f"Vehicle is shifted {rw_distance:.3f} m {side} from centerline"
         return rw_distance, text
-
-
-"""
-if __name__ == "__main__":
-    # Parameters
-    focal_length = 528  # ZED 2 focal length for HD 720
-    image_width = 1280
-    pitch_angle = np.deg2rad(94)
-    camera_height = 1.35
-    H_FoV = np.deg2rad(101)  # ZED 2 horizontal field of view for HD 720
-    V_FoV = np.deg2rad(68)  # ZED 2 vertical field of view for HD 720
-
-    position_estimator = VehiclePositionEstimator(focal_length, image_width, pitch_angle, camera_height, V_FoV)
-
-    bottommost_point = (1280//2, 720)  # Only example
-
-    # Get the relative position
-    distance, text = position_estimator.get_relative_position(bottommost_point)
-    print(text)
-"""
